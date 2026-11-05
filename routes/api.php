@@ -1,3 +1,7 @@
+<?php
+
+declare(strict_types=1);
+
 use Core\Router;
 
 Router::get('/api/health', function() {
