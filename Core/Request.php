@@ -68,7 +68,7 @@ final class Request
         try {
             $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-            Response::error('بدنه‌ی درخواست JSON معتبر نیست', 400);
+            throw new HttpException('بدنه‌ی درخواست JSON معتبر نیست', 400);
         }
 
         return $this->body = is_array($decoded) ? $decoded : [];

@@ -12,9 +12,12 @@ require BASE_PATH . '/app/bootstrap.php';
 
 use Core\Env;
 use Core\Router;
+use Core\Cors;
 
 // بارگذاری تنظیمات محیطی
 Env::load(__DIR__ . '/../.env');
+
+Cors::handle();
 
 // بارگذاری لیست مسیرهای API
 require_once __DIR__ . '/../routes/api.php';

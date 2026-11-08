@@ -11,3 +11,9 @@ spl_autoload_register(function (string $class) {
         require_once $file;
     }
 });
+
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
+set_exception_handler([\Core\ErrorHandler::class, 'handleException']);
+set_error_handler([\Core\ErrorHandler::class, 'handleError']);

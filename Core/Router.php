@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Core;
 
-namespace Core;
-
 class Router {
     private static array $routes = [];
 
@@ -73,24 +71,14 @@ class Router {
             }
         }
 
-        // اگر مسیر پیدا شد اما متد اشتباه بود (خطای 405)
+                // اگر مسیر پیدا شد اما متد اشتباه بود (خطای 405)
         if ($routeFound && !$methodMatched) {
-            http_response_code(405);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode([
-                "success" => false, 
-                "message" => "متد درخواست برای این مسیر مجاز نیست (Method Not Allowed)"
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
+            throw new HttpException('متد درخواست برای این مسیر مجاز نیست (Method Not Allowed)', 405);
         }
 
-        // اگر کلاً مسیر پیدا نشد (خطای 404)
-        http_response_code(404);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            "success" => false, 
-            "message" => "مسیر مورد نظر یافت نشد (Not Found)"
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
+               // اگر کلاً مسیر پیدا نشد (خطای 404)
+        throw new HttpException('مسیر مورد نظر یافت نشد (Not Found)', 404);
+        
     }
+
 }
