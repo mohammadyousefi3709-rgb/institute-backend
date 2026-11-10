@@ -59,12 +59,19 @@ class Router {
                 if ($route['method'] === $method) {
                     $methodMatched = true;
                     
-                    // حذف کل تطابق از ابتدای آرایه و نگهداری متغیرها
+                                       // حذف کل تطابق از ابتدای آرایه و نگهداری متغیرها
                     array_shift($matches);
-                    
-                    // اجرای تابع یا کنترلر مربوطه
+
+                    $request = new Request();
+
+                    // اجرای میدلورها به ترتیب؛ هر کدام در صورت رد شدن استثنا پرتاب می‌کند
+                    foreach ($route['middlewares'] as $middleware) {
+                        call_user_func($middleware, $request);
+                    }
+
+                    // اجرای تابع یا کنترلر مربوطه؛ Request همیشه اولین آرگومان است
                     if (is_callable($route['handler'])) {
-                        call_user_func_array($route['handler'], $matches);
+                        call_user_func_array($route['handler'], [$request, ...$matches]);
                     }
                     return;
                 }

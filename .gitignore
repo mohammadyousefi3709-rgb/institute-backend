@@ -3,3 +3,4 @@ vendor/
 public/uploads/*
 !public/uploads/.gitkeep
 .git-backup/
+vendor/

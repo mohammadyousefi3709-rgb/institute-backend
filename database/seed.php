@@ -54,4 +54,4 @@ if ((int) $pdo->query('SELECT COUNT(*) FROM info')->fetchColumn() === 0) {
     echo 'Info row already exists, skipped.' . PHP_EOL;
 }
 
-echo 'Seed finished.' . PHP_EOL;لهف
+echo 'Seed finished.' . PHP_EOL;

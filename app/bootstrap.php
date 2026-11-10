@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require BASE_PATH . '/vendor/autoload.php';
+
 // اتولودر یکپارچه و استاندارد برای بارگذاری خودکار کلاس‌ها بر اساس Namespace
 spl_autoload_register(function (string $class) {
     // تبدیل Namespace (مثل Core\Env) به مسیر فایل (با حفظ دقیق بزرگی و کوچکی حروف)

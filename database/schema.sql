@@ -30,16 +30,20 @@ CREATE TABLE IF NOT EXISTS users(
 CREATE TABLE IF NOT EXISTS classes (
     class_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(150) NOT NULL,
-    number VARCHAR(20) NOT NULL,
+    class_num VARCHAR(20) NOT NULL,
+    sessions SMALLINT UNSIGNED NOT NULL,
+    s_date DATE NOT NULL,
+    e_date DATE NOT NULL,
     user_id INT UNSIGNED NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(class_id),
-    UNIQUE KEY uq_classes_number (number),
+    UNIQUE KEY uq_classes_number (class_num),
     KEY idx_classes_user (user_id),
     CONSTRAINT fk_classes_user FOREIGN KEY (user_id)
     REFERENCES users (user_id)
     ON DELETE RESTRICT
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+    CONSTRAINT chk_classes_dates CHECK (e_date >= s_date)
 ) ENGINE=InnoDB;
 
 -- 4. class_student (user_id is the student)
@@ -77,7 +81,23 @@ CREATE TABLE IF NOT EXISTS class_time (
     CONSTRAINT chk_class_time_range CHECK (e_clock > s_clock)
 ) ENGINE=InnoDB;
 
--- 6. landing page: info (single row , admin only edits it)
+-- 6. class_session (one row per session of a class)
+CREATE TABLE IF NOT EXISTS class_session (
+    session_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    class_id INT UNSIGNED NOT NULL,
+    session_num SMALLINT UNSIGNED NOT NULL,
+    status ENUM('scheduled', 'held', 'cancelled', 'postponed') NOT NULL DEFAULT 'scheduled',
+    `date` DATE NOT NULL,
+    PRIMARY KEY(session_id),
+    UNIQUE KEY uq_class_session_num (class_id , session_num),
+    KEY idx_class_session_date (`date`),
+    CONSTRAINT fk_class_session_class FOREIGN KEY (class_id)
+    REFERENCES classes (class_id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 7. landing page: info (single row , admin only edits it)
 CREATE TABLE IF NOT EXISTS info (
     info_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     about TEXT NULL,
@@ -87,7 +107,7 @@ CREATE TABLE IF NOT EXISTS info (
     PRIMARY KEY(info_id)
 ) ENGINE=InnoDB;
 
--- 7. landing page: slide_shows
+-- 8. landing page: slide_shows
 CREATE TABLE IF NOT EXISTS slide_shows (
     slide_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(150) NOT NULL,
@@ -96,7 +116,7 @@ CREATE TABLE IF NOT EXISTS slide_shows (
     PRIMARY KEY(slide_id)
 ) ENGINE=InnoDB;
 
--- 8. landing page: new_content
+-- 9. landing page: new_content
 CREATE TABLE IF NOT EXISTS new_content (
     content_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(150) NOT NULL,
