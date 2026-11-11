@@ -53,10 +53,18 @@ final class Request
         return null;
     }
 
-    public function body(): array
+        public function body(): array
     {
         if ($this->body !== null) {
             return $this->body;
+        }
+
+        if ($this->isFormRequest()) {
+            if ($_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+                throw new HttpException('حجم درخواست بیشتر از حد مجاز سرور است', 413);
+            }
+
+            return $this->body = $_POST;
         }
 
         $raw = file_get_contents('php://input');
@@ -73,9 +81,23 @@ final class Request
 
         return $this->body = is_array($decoded) ? $decoded : [];
     }
-
     public function input(string $key, mixed $default = null): mixed
     {
         return $this->body()[$key] ?? $_GET[$key] ?? $default;
+    }
+
+        public function file(string $key): ?array
+    {
+        $file = $_FILES[$key] ?? null;
+
+        return is_array($file) ? $file : null;
+    }
+
+    private function isFormRequest(): bool
+    {
+        $type = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+
+        return str_starts_with($type, 'multipart/form-data')
+            || str_starts_with($type, 'application/x-www-form-urlencoded');
     }
 }

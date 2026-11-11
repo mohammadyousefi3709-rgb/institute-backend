@@ -50,6 +50,14 @@ final class Validator
         return $validated;
     }
 
+        public static function id(string $value): int
+    {
+        if (preg_match('/^[1-9][0-9]*$/', $value) !== 1) {
+            throw new HttpException('مورد درخواستی یافت نشد', 404);
+        }
+
+        return (int) $value;
+    }
     private static function check(string $rule, mixed $value): ?string
     {
         [$name, $param] = array_pad(explode(':', $rule, 2), 2, null);
@@ -59,6 +67,7 @@ final class Validator
             'min' => self::length($value) < (int) $param ? "حداقل {$param} کاراکتر باشد" : null,
             'max' => self::length($value) > (int) $param ? "حداکثر {$param} کاراکتر باشد" : null,
             'regex' => preg_match((string) $param, (string) $value) !== 1 ? 'فرمت نامعتبر است' : null,
+            'email' => filter_var($value, FILTER_VALIDATE_EMAIL) === false ? 'ایمیل نامعتبر است' : null,
             'unique' => self::exists((string) $param, $value) ? 'این مقدار قبلاً ثبت شده است' : null,
             default => throw new InvalidArgumentException("Unknown validation rule: {$name}"),
         };
