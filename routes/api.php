@@ -12,6 +12,7 @@ use Controllers\InfoController;
 use Middlewares\RoleMiddleware;
 use Controllers\SlideController;
 use Controllers\ContentController;
+use Controllers\TeacherController;
 
 
 
@@ -44,5 +45,10 @@ Router::get('/api/admin/contents', [ContentController::class, 'index'], $admin);
 Router::post('/api/admin/contents', [ContentController::class, 'store'], $admin);
 Router::post('/api/admin/contents/{id}', [ContentController::class, 'update'], $admin);
 Router::delete('/api/admin/contents/{id}', [ContentController::class, 'destroy'], $admin);
-
-
+// Teacher management (admin only)
+Router::get('/api/admin/teachers', [TeacherController::class, 'index'], $admin);
+Router::post('/api/admin/teachers', [TeacherController::class, 'store'], $admin);
+Router::post('/api/admin/teachers/{id}', [TeacherController::class, 'update'], $admin);
+Router::delete('/api/admin/teachers/{id}', [TeacherController::class, 'destroy'], $admin);
+Router::post('/api/admin/teachers/{id}/reset-password', [TeacherController::class, 'resetPassword'], $admin);
+Router::get('/api/admin/teachers/{id}/schedule', [TeacherController::class, 'schedule'], $admin);

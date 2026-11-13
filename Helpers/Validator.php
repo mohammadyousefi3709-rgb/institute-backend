@@ -69,6 +69,7 @@ final class Validator
             'regex' => preg_match((string) $param, (string) $value) !== 1 ? 'فرمت نامعتبر است' : null,
             'email' => filter_var($value, FILTER_VALIDATE_EMAIL) === false ? 'ایمیل نامعتبر است' : null,
             'unique' => self::exists((string) $param, $value) ? 'این مقدار قبلاً ثبت شده است' : null,
+            'national_code' => self::isNationalCode((string) $value) ? null : 'کدملی نامعتبر است',
             default => throw new InvalidArgumentException("Unknown validation rule: {$name}"),
         };
     }
@@ -76,6 +77,28 @@ final class Validator
     private static function isEmpty(mixed $value): bool
     {
         return $value === null || $value === '';
+    }
+
+        private static function isNationalCode(string $code): bool
+    {
+        if (preg_match('/^\d{10}$/', $code) !== 1) {
+            return false;
+        }
+
+        if (preg_match('/^(\d)\1{9}$/', $code) === 1) {
+            return false;
+        }
+
+        $sum = 0;
+
+        for ($i = 0; $i < 9; $i++) {
+            $sum += (int) $code[$i] * (10 - $i);
+        }
+
+        $remainder = $sum % 11;
+        $control = (int) $code[9];
+
+        return $remainder < 2 ? $control === $remainder : $control === 11 - $remainder;
     }
 
     private static function length(mixed $value): int

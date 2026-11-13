@@ -54,7 +54,7 @@ final class AuthController
         ], 'ورود با موفقیت انجام شد');
  
  
-        }
+    }
 
             public static function me(Request $request): void
     {
