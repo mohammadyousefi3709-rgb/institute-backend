@@ -9,15 +9,19 @@ use Core\HttpException;
 use Core\Request;
 use Core\Response;
 use Helpers\Pagination;
+use Helpers\Schedule;
 use Helpers\Upload;
 use Helpers\Validator;
 use Models\User;
 use PDOException;
 use Throwable;
+use Helpers\Account;
 
 final class TeacherController
 {
     private const ROLE = 'teacher';
+
+    private const SEARCH_COLUMNS = ['fullname', 'national_code', 'skill'];
 
     public static function index(Request $request): void
     {
@@ -26,7 +30,7 @@ final class TeacherController
         $search = $request->query('search');
         $search = is_string($search) ? mb_substr(trim($search), 0, 100, 'UTF-8') : '';
 
-        $result = User::paginate(self::ROLE, $search, $page['per_page'], $page['offset']);
+        $result = User::paginate(self::ROLE, $search, self::SEARCH_COLUMNS, $page['per_page'], $page['offset']);
 
         Response::success([
             'items' => $result['items'],
@@ -46,29 +50,20 @@ final class TeacherController
 
         $nationalCode = (string) $data['national_code'];
 
-        if (User::findByNationalCode($nationalCode) !== null || User::findByUsername($nationalCode) !== null) {
-            throw self::duplicate();
-        }
+        Account::assertAvailable($nationalCode);
 
         $file = $request->file('image');
         $path = Upload::hasFile($file) ? Upload::image($file, 'users') : null;
 
         try {
-            $id = User::create([
-                'username' => $nationalCode,
+            $id = Account::register(self::ROLE, [
                 'national_code' => $nationalCode,
-                'password_hash' => password_hash($nationalCode, PASSWORD_DEFAULT),
                 'fullname' => $data['fullname'],
                 'skill' => $data['skill'],
                 'img_url' => $path,
-                'role' => self::ROLE,
             ]);
         } catch (Throwable $exception) {
             Upload::delete($path);
-
-            if ($exception instanceof PDOException && (int) ($exception->errorInfo[1] ?? 0) === 1062) {
-                throw self::duplicate();
-            }
 
             throw $exception;
         }
@@ -76,12 +71,6 @@ final class TeacherController
         Response::success(User::find($id, self::ROLE), 'مدرس با موفقیت ثبت شد', 201);
     }
 
-    private static function duplicate(): HttpException
-    {
-        return new HttpException('کدملی یا نام کاربری تکراری است', 409, [
-            'national_code' => 'این کدملی قبلاً ثبت شده است',
-        ]);
-    }
 
         public static function update(Request $request, string $id): void
     {
@@ -162,20 +151,12 @@ final class TeacherController
         $teacherId = Validator::id($id);
         $teacher = self::findOrFail($teacherId);
 
-        $nationalCode = (string) ($teacher['national_code'] ?? '');
-
-        if ($nationalCode === '') {
-            throw new HttpException('اطلاعات ارسالی نامعتبر است', 422, [
-                'national_code' => 'کدملی این مدرس ثبت نشده است',
-            ]);
-        }
-
-        User::updatePassword($teacherId, self::ROLE, password_hash($nationalCode, PASSWORD_DEFAULT));
+        Account::resetPassword($teacher, self::ROLE);
 
         Response::success(null, 'رمز مدرس به کدملی او بازنشانی شد');
     }
 
-        public static function schedule(Request $request, string $id): void
+           public static function schedule(Request $request, string $id): void
     {
         $teacherId = Validator::id($id);
         $teacher = self::findOrFail($teacherId);
@@ -192,35 +173,10 @@ final class TeacherController
         );
         $statement->execute(['user_id' => $teacherId]);
 
-        $classes = [];
-
-        foreach ($statement->fetchAll() as $row) {
-            $classId = (int) $row['class_id'];
-
-            if (!isset($classes[$classId])) {
-                $classes[$classId] = [
-                    'class_id' => $classId,
-                    'title' => $row['title'],
-                    'class_num' => $row['class_num'],
-                    'sessions' => (int) $row['sessions'],
-                    's_date' => $row['s_date'],
-                    'e_date' => $row['e_date'],
-                    'times' => [],
-                ];
-            }
-
-            if ($row['day'] !== null) {
-                $classes[$classId]['times'][] = [
-                    'day' => (int) $row['day'],
-                    's_clock' => $row['s_clock'],
-                    'e_clock' => $row['e_clock'],
-                ];
-            }
-        }
-
         Response::success([
             'teacher' => $teacher,
-            'classes' => array_values($classes),
+            'classes' => Schedule::groupByClass($statement->fetchAll()),
         ], 'برنامه‌ی مدرس');
     }
+
 }

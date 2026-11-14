@@ -70,6 +70,7 @@ final class Validator
             'email' => filter_var($value, FILTER_VALIDATE_EMAIL) === false ? 'ایمیل نامعتبر است' : null,
             'unique' => self::exists((string) $param, $value) ? 'این مقدار قبلاً ثبت شده است' : null,
             'national_code' => self::isNationalCode((string) $value) ? null : 'کدملی نامعتبر است',
+            'mobile' => preg_match('/^09\d{9}$/', (string) $value) === 1 ? null : 'شماره موبایل نامعتبر است',
             default => throw new InvalidArgumentException("Unknown validation rule: {$name}"),
         };
     }

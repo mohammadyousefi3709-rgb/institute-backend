@@ -6,6 +6,7 @@ namespace Models;
 
 use Core\Database;
 use PDO;
+use InvalidArgumentException;
 
 final class User
 {
@@ -34,20 +35,27 @@ final class User
         return self::findOneBy('national_code', $nationalCode);
     }
 
-    public static function paginate(string $role, string $search, int $limit, int $offset): array
+        public static function paginate(string $role, string $search, array $searchColumns, int $limit, int $offset): array
     {
         $pdo = Database::connection();
 
         $where = 'role = :role';
         $params = [':role' => $role];
 
-        if ($search !== '') {
+        if ($search !== '' && $searchColumns !== []) {
             $like = '%' . addcslashes($search, '\\%_') . '%';
+            $conditions = [];
 
-            $where .= ' AND (fullname LIKE :search_name OR national_code LIKE :search_code OR skill LIKE :search_skill)';
-            $params[':search_name'] = $like;
-            $params[':search_code'] = $like;
-            $params[':search_skill'] = $like;
+            foreach (array_values($searchColumns) as $index => $column) {
+                if (!in_array($column, self::SEARCHABLE_COLUMNS, true)) {
+                    throw new InvalidArgumentException('Column is not searchable: ' . $column);
+                }
+
+                $conditions[] = $column . ' LIKE :search_' . $index;
+                $params[':search_' . $index] = $like;
+            }
+
+            $where .= ' AND (' . implode(' OR ', $conditions) . ')';
         }
 
         $count = $pdo->prepare('SELECT COUNT(*) FROM users WHERE ' . $where);
@@ -69,7 +77,6 @@ final class User
 
         return ['items' => $statement->fetchAll(), 'total' => $total];
     }
-
     public static function create(array $data): int
     {
         $pdo = Database::connection();
@@ -141,4 +148,6 @@ final class User
 
         return $user === false ? null : $user;
     }
+
+        private const SEARCHABLE_COLUMNS = ['fullname', 'national_code', 'skill', 'phone'];
 }
